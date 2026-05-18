@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Chat Room</title>
+    <style>
+        /* Retro CRT/Terminal Aesthetic */
+        body {
+            background-color: #0a0a0a;
+            color: #33ff33;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-shadow: 0 0 5px #33ff33;
+        }
+
+        #chat-container {
+            width: 600px;
+            max-width: 90%;
+            border: 2px solid #33ff33;
+            box-shadow: 0 0 15px #33ff33;
+            padding: 20px;
+            background-color: #111;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            border-bottom: 2px dashed #33ff33;
+            padding-bottom: 10px;
+        }
+
+        #chat-box {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #33ff33;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #050505;
+        }
+
+        .message {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .timestamp {
+            color: #008800;
+            margin-right: 8px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            background-color: #000;
+            border: 1px solid #33ff33;
+            color: #33ff33;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            text-shadow: 0 0 3px #33ff33;
+        }
+
+        #username { width: 25%; }
+        #message-input { flex-grow: 1; }
+
+        button {
+            background-color: #33ff33;
+            color: #000;
+            border: none;
+            padding: 8px 15px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 5px #33ff33;
+        }
+
+        button:hover {
+            background-color: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        /* Custom Scrollbar for that retro feel */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #33ff33; }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <h2>=== RETRO_CHAT_v1.0 ===</h2>
+    <div id="chat-box"></div>
+    
+    <div class="input-area">
+        <input type="text" id="username" placeholder="USER" maxlength="10" value="ANON">
+        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+        <button id="send-btn">SEND</button>
+    </div>
+</div>
+
+<script>
+    // Connect to the local WebSocket server
+    const socket = new WebSocket('ws://localhost:8080');
+    
+    const chatBox = document.getElementById('chat-box');
+    const usernameInput = document.getElementById('username');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    // Handle incoming messages from the server
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        displayMessage(data.user, data.text);
+    };
+
+    // Send message to the server
+    function sendMessage() {
+        const user = usernameInput.value.trim() || 'ANON';
+        const text = messageInput.value.trim();
+
+        if (text === '') return;
+
+        const messagePayload = { user: user, text: text };
+        
+        // Convert object to string and send over WebSocket
+        socket.send(JSON.stringify(messagePayload));
+        
+        messageInput.value = ''; // Clear input
+    }
+
+    // Append message to the chat container
+    function displayMessage(user, text) {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message';
+        messageEl.innerHTML = `<span class="timestamp">[${time}]</span> <strong>&lt;${user}&gt;:</strong> ${text}`;
+        
+        chatBox.appendChild(messageEl);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to bottom
+    }
+
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+</script>
+</body>
+  </html>
+  
